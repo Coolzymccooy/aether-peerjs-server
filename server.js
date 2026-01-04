@@ -1,4 +1,4 @@
-// server.js (Render-friendly)
+// server.js
 const http = require("http");
 const express = require("express");
 const cors = require("cors");
@@ -6,14 +6,13 @@ const { ExpressPeerServer } = require("peer");
 
 const app = express();
 
-// Render provides PORT
 const PORT = Number(process.env.PORT || 9000);
 const PEER_PATH = process.env.PEER_PATH || "/peerjs";
 
-// Optional: lock CORS down (comma-separated)
+// optional: set "CORS_ORIGINS" in Render env as comma-separated origins
 const CORS_ORIGINS = (process.env.CORS_ORIGINS || "")
   .split(",")
-  .map((s) => s.trim())
+  .map(s => s.trim())
   .filter(Boolean);
 
 app.use(
@@ -31,15 +30,15 @@ app.get("/health", (_req, res) =>
 
 const server = http.createServer(app);
 
-// Peer endpoints will live at `${PEER_PATH}/*`
 const peerServer = ExpressPeerServer(server, {
   path: "/",
   proxied: true,
   debug: true
 });
 
+// THIS is what makes /peerjs/id work
 app.use(PEER_PATH, peerServer);
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`[peer] up on :${PORT}${PEER_PATH}`);
+  console.log(`[peer] listening on ${PORT} path=${PEER_PATH}`);
 });
