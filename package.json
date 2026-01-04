@@ -1,15 +1,15 @@
+
 {
   "name": "aether-peerjs-server",
   "version": "1.0.0",
   "private": true,
-  "type": "commonjs",
-  "main": "server.js",
+  "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "peerjs --port 9000 --path /peerjs --proxied true",
+    "dev": "peerjs --port 9000 --path /peerjs --proxied true"
   },
   "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "peer": "^1.0.2"
+    "peer": "^1.0.2",
+    "peerjs": "^1.5.4"
   }
 }
