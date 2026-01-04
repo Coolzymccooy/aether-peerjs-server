@@ -1,34 +1,45 @@
+// server.js (Render-friendly)
+const http = require("http");
 const express = require("express");
 const cors = require("cors");
 const { ExpressPeerServer } = require("peer");
 
 const app = express();
 
-// Render sets PORT automatically
-const PORT = process.env.PORT || 9000;
+// Render provides PORT
+const PORT = Number(process.env.PORT || 9000);
+const PEER_PATH = process.env.PEER_PATH || "/peerjs";
 
-// If you want to lock CORS later, replace "*" with your Vercel domain(s)
-app.use(cors({ origin: "*", methods: ["GET", "POST", "OPTIONS"] }));
+// Optional: lock CORS down (comma-separated)
+const CORS_ORIGINS = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
-// Basic health check so your root URL isn't "Not Found"
-app.get("/", (_req, res) => {
-  res.type("text").send("Aether PeerJS server is running. Peer endpoint: /peerjs");
+app.use(
+  cors(
+    CORS_ORIGINS.length
+      ? { origin: CORS_ORIGINS, credentials: true }
+      : { origin: true, credentials: true }
+  )
+);
+
+app.get("/", (_req, res) => res.status(200).send("ok"));
+app.get("/health", (_req, res) =>
+  res.status(200).json({ ok: true, peerPath: PEER_PATH })
+);
+
+const server = http.createServer(app);
+
+// Peer endpoints will live at `${PEER_PATH}/*`
+const peerServer = ExpressPeerServer(server, {
+  path: "/",
+  proxied: true,
+  debug: true
 });
 
-app.get("/health", (_req, res) => {
-  res.json({ ok: true });
-});
+app.use(PEER_PATH, peerServer);
 
-// Create the PeerJS server mounted at /peerjs
-const peerServer = ExpressPeerServer(app, {
-  path: "/peerjs",
-  // debug: true, // uncomment if needed
-  allow_discovery: false
-});
-
-app.use("/peerjs", peerServer);
-
-app.listen(PORT, () => {
-  console.log(`PeerJS server listening on :${PORT}`);
-  console.log(`Peer endpoint: /peerjs`);
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`[peer] up on :${PORT}${PEER_PATH}`);
 });
