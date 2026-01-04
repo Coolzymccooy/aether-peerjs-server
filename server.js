@@ -6,8 +6,8 @@ const { ExpressPeerServer } = require("peer");
 
 const app = express();
 const PORT = Number(process.env.PORT || 9000);
+const PEER_PATH = process.env.PEER_PATH || "/peerjs";
 
-// Optional allowlist: comma-separated origins in Render env var CORS_ORIGINS
 const CORS_ORIGINS = (process.env.CORS_ORIGINS || "")
   .split(",")
   .map((s) => s.trim())
@@ -23,21 +23,21 @@ app.use(
 
 app.get("/", (_req, res) => res.status(200).send("ok"));
 app.get("/health", (_req, res) =>
-  res.status(200).json({ ok: true, peerPath: "/peerjs" })
+  res.status(200).json({ ok: true, peerPath: PEER_PATH })
 );
 
 const server = http.createServer(app);
 
-// ✅ Set the PeerJS base path HERE
 const peerServer = ExpressPeerServer(server, {
-  path: "/peerjs",
+  path: "/",         // important
   proxied: true,
-  debug: true
+  debug: true,
 });
 
-// ✅ Mount at root so we DON'T double-prefix
-app.use(peerServer);
+// Mount BOTH to handle client variations (/peerjs/... AND /peerjs/peerjs/...)
+app.use(PEER_PATH, peerServer);
+app.use(`${PEER_PATH}/peerjs`, peerServer);
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`[peer] listening on ${PORT} path=/peerjs`);
+  console.log(`[peer] listening on ${PORT}${PEER_PATH}`);
 });
